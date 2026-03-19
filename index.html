@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>愿此行，终抵群星。</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- 统一的 Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#EC4899',
+                        accent: '#8B5CF6',
+                        space: '#0F172A',
+                        mars: '#C2410C'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .glass-effect {
+                @apply bg-white/5 backdrop-blur-md border border-white/10 shadow-lg;
+            }
+            .btn-gradient {
+                @apply bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 hover:from-blue-500/20 hover:via-purple-500/20 hover:to-pink-500/20 transition-all duration-500;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            }
+            .text-glow {
+                text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            }
+        }
+    </style>
+</head>
+<body class="bg-black min-h-screen overflow-hidden relative">
+    <!-- 背景装饰 -->
+    <div class="absolute inset-0 overflow-hidden">
+        <!-- 火星背景 -->
+        <img src="https://p11-doubao-search-sign.byteimg.com/tos-cn-i-be4g95zd3a/1061457109604630587~tplv-be4g95zd3a-image.jpeg?lk3s=feb11e32&x-expires=1789484226&x-signature=HHdav1kykEc0l20IrKLB80fwYXg%3D" alt="火星背景" class="w-full h-full object-cover opacity-80">
+        
+        <!-- 星星背景 -->
+        <div class="stars absolute inset-0"></div>
+        
+        <!-- 地球 -->
+        <div class="absolute -left-32 bottom-1/4 w-64 h-64 rounded-full bg-blue-500/30 blur-md animate-float" style="animation-delay: 2s;"></div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="relative z-10 container mx-auto px-4 py-12 h-screen flex flex-col md:flex-row items-center justify-between">
+        <!-- 左侧按钮区域 -->
+        <div class="w-full md:w-1/2 flex flex-col gap-6 mb-12 md:mb-0">
+            <a href="牛顿大炮和宇宙速度模拟程序.html" class="btn-gradient glass-effect rounded-xl py-8 px-6 text-white text-xl font-bold hover:scale-105 transition-transform duration-300 flex items-center">
+                <i class="fa fa-rocket mr-4 text-2xl"></i>
+                牛顿大炮和宇宙速度模拟程序
+            </a>
+            <a href="火星探测模拟程序.html" class="btn-gradient glass-effect rounded-xl py-8 px-6 text-white text-xl font-bold hover:scale-105 transition-transform duration-300 flex items-center">
+                <i class="fa fa-globe mr-4 text-2xl"></i>
+                火星探测模拟程序
+            </a>
+            <a href="变轨计算器.html" class="btn-gradient glass-effect rounded-xl py-8 px-6 text-white text-xl font-bold hover:scale-105 transition-transform duration-300 flex items-center">
+                <i class="fa fa-calculator mr-4 text-2xl"></i>
+                变轨计算器
+            </a>
+        </div>
+        
+        <!-- 右侧标题区域 -->
+        <div class="w-full md:w-1/2 text-center md:text-right">
+            <h1 class="text-6xl sm:text-8xl md:text-[8rem] lg:text-[10rem] font-extrabold text-white mb-6 text-shadow text-glow leading-tight opacity-90">
+                株洲市<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-500">第二中学</span><br>课程展示
+            </h1>
+            <p class="text-2xl text-gray-300 max-w-xl mx-auto md:ml-auto md:text-right mt-8 leading-relaxed">
+                探索宇宙奥秘，体验太空旅行的魅力。<br>
+                通过交互式模拟，了解天体运动的基本原理。
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // 创建星星背景
+        function createStars() {
+            const starsContainer = document.querySelector('.stars');
+            const starsCount = 200;
+            
+            for (let i = 0; i < starsCount; i++) {
+                const star = document.createElement('div');
+                const size = Math.random() * 2;
+                const opacity = Math.random() * 0.8 + 0.2;
+                
+                star.style.position = 'absolute';
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.backgroundColor = 'white';
+                star.style.borderRadius = '50%';
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.opacity = opacity;
+                star.style.animation = `pulse ${Math.random() * 3 + 2}s infinite`;
+                
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // 页面加载完成后创建星星
+        window.addEventListener('DOMContentLoaded', createStars);
+        
+        // 为按钮添加悬停效果
+        document.querySelectorAll('a').forEach(button => {
+            button.addEventListener('mouseenter', function() {
+                this.classList.add('shadow-xl');
+            });
+            
+            button.addEventListener('mouseleave', function() {
+                this.classList.remove('shadow-xl');
+            });
+        });
+    </script>
+</body>
+</html>

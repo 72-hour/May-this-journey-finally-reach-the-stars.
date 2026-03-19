@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 火星捕获 · 调节半长轴</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #0a1220, #0e1a2a);
+            font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+        .container {
+            max-width: 1300px;
+            width: 100%;
+            background: rgba(10, 20, 35, 0.9);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 28px;
+            box-shadow: 0 25px 50px -12px #00000080;
+            border: 1px solid #2c405a;
+        }
+        h1 {
+            margin: 0 0 6px 0;
+            font-weight: 400;
+            font-size: 2.4rem;
+            background: linear-gradient(135deg, #b3e5ff, #9bbaff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .sub {
+            color: #8aa3cc;
+            margin-bottom: 24px;
+            border-left: 6px solid #3b82f6;
+            padding-left: 20px;
+            background: #0f1c2f;
+            border-radius: 0 40px 40px 0;
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+        .grid {
+            display: flex;
+            gap: 28px;
+            flex-wrap: wrap;
+        }
+        .canvas-area {
+            flex: 2.8;
+            min-width: 620px;
+            background: #030b16;
+            border-radius: 42px;
+            padding: 16px;
+            border: 1px solid #2f405f;
+        }
+        #three-canvas {
+            width: 100%;
+            height: 500px;
+            display: block;
+            border-radius: 32px;
+            background: #030b16;
+            box-shadow: 0 8px 18px #00000060;
+        }
+        .control-area {
+            flex: 1.4;
+            min-width: 300px;
+            background: #0f1b2c;
+            border-radius: 42px;
+            padding: 28px 22px;
+            border: 1px solid #314a6b;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        .card {
+            background: #0c1627;
+            border-radius: 30px;
+            padding: 22px 18px;
+            border-left: 6px solid #3b82f6;
+        }
+        .card-title {
+            font-weight: 600;
+            color: #d3e5ff;
+            margin-bottom: 18px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .slider-block {
+            margin: 18px 0;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            color: #a6bedd;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+        input[type=range] {
+            width: 100%;
+            height: 8px;
+            background: #1f334e;
+            border-radius: 20px;
+            -webkit-appearance: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 26px;
+            height: 26px;
+            background: #f5b342;
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 0 15px #f90;
+            cursor: pointer;
+        }
+        .value-badge {
+            background: #1f4068;
+            padding: 6px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #ffdfa7;
+            font-size: 1.1rem;
+        }
+        .info-panel {
+            background: #0b1424;
+            border-radius: 30px;
+            padding: 22px;
+            border: 1px solid #334b6e;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 15px 0;
+            align-items: center;
+        }
+        .info-label {
+            color: #93adcf;
+        }
+        .info-value {
+            background: #1e3150;
+            padding: 6px 18px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #ddf0ff;
+        }
+        .feedback {
+            background: #0b1a30;
+            border-radius: 28px;
+            padding: 18px;
+            color: #c6ddff;
+            font-style: italic;
+            border-left: 8px solid #f5b342;
+            margin-top: 10px;
+            font-size: 1.05rem;
+        }
+        button {
+            background: #2a3f62;
+            border: none;
+            padding: 16px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            border: 1px solid #557dbb;
+            transition: 0.2s;
+            margin-top: 8px;
+        }
+        button.primary {
+            background: #3b82f6;
+            box-shadow: 0 8px 20px #1e3a8a;
+        }
+        button.primary:hover:not(:disabled) {
+            background: #2563eb;
+            transform: scale(1.02);
+        }
+        button.secondary {
+            background: #ffaa33;
+            color: #1a2639;
+            border-color: #ffcc88;
+        }
+        button.secondary:hover:not(:disabled) {
+            background: #ff9900;
+        }
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .legend {
+            display: flex;
+            gap: 28px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 16px;
+        }
+        .dot.earth-orbit { background: #2ecc71; }
+        .dot.mars-orbit { background: #e67e22; }
+        .dot.transfer { background: #f1c40f; }
+        .dot.probe { background: white; }
+        .dot.leo { background: #ffffff; border: 2px solid #aaa; }
+        footer {
+            margin-top: 28px;
+            color: #5f7aa8;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🔴 3D 火星捕获 · 调节半长轴</h1>
+    <div class="sub">🚀 探测器先绕地球运行（白色轨道）→ 调节半长轴a → 第一次加速进入霍曼转移轨道 → 到达火星时手动第二次减速</div>
+
+    <div class="grid">
+        <!-- 3D画布区 -->
+        <div class="canvas-area">
+            <div id="three-canvas"></div>
+        </div>
+
+        <!-- 控制区 -->
+        <div class="control-area">
+            <div class="card">
+                <div class="card-title">🔼 霍曼转移轨道 · 半长轴 a</div>
+                <div class="slider-block">
+                    <div class="slider-label">
+                        <span>半长轴 a (AU)</span>
+                        <span class="value-badge" id="aVal">1.26</span>
+                    </div>
+                    <input type="range" id="aSlider" min="1.26" max="1.8" value="1.26" step="0.01">
+                </div>
+                <div class="info-row">
+                    <span class="info-label">对应远地点</span>
+                    <span class="info-value" id="apoapsisVal">1.52 AU</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">第一次加速速度</span>
+                    <span class="info-value" id="v1Val">1.000</span>
+                </div>
+                <div id="orbitFeedback" style="color: #a3d8a3; font-weight: 500;">✅ 当前远地点 1.52 AU (等于火星轨道)</div>
+                <button class="primary" id="boostBtn" style="width:100%; margin-top:10px;">🚀 执行第一次加速</button>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🔽 第二次减速 · 速度设置</div>
+                <div class="slider-block">
+                    <div class="slider-label">
+                        <span>速度 (火星轨道速度倍数)</span>
+                        <span class="value-badge" id="v2Val">1.00</span>
+                    </div>
+                    <input type="range" id="v2Slider" min="0.7" max="1.3" value="1.0" step="0.002">
+                </div>
+                <div id="captureFeedback" style="color: #b0d0ff; min-height: 48px;">⚡ 等待进入转移轨道</div>
+                <button class="secondary" id="captureBtn" disabled style="width:100%; margin-top:10px;">🔽 执行第二次减速</button>
+            </div>
+
+            <button id="resetBtn">↻ 重置</button>
+
+            <div class="info-panel">
+                <div style="font-weight: 600; margin-bottom: 16px;">📘 轨道说明</div>
+                <div>• 绿色虚线：地球绕太阳轨道</div>
+                <div>• 橙色虚线：火星绕太阳轨道</div>
+                <div>• 白色实线：探测器近地轨道（绕地球）</div>
+                <div>• 黄色虚线：霍曼转移轨道（绕太阳）</div>
+                <div>• 半长轴 a = 1.26 时远地点 = 火星轨道</div>
+                <div class="legend">
+                    <span class="legend-item"><span class="dot earth-orbit"></span> 地球轨道</span>
+                    <span class="legend-item"><span class="dot mars-orbit"></span> 火星轨道</span>
+                    <span class="legend-item"><span class="dot transfer"></span> 转移轨道</span>
+                    <span class="legend-item"><span class="dot leo"></span> 近地轨道</span>
+                </div>
+            </div>
+            <div class="feedback" id="mainFeedback">
+                探测器正在近地轨道运行，调节半长轴a，然后执行第一次加速。
+            </div>
+        </div>
+    </div>
+    <footer>🎯 实验目标：从近地轨道出发，经两次变轨进入环火星轨道。</footer>
+</div>
+
+<!-- 引入Three.js -->
+<script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.128.0/build/three.module.js"
+        }
+    }
+</script>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { OrbitControls } from 'https://unpkg.com/three@0.128.0/examples/jsm/controls/OrbitControls.js';
+
+    // --- 物理常量 ---
+    const SCALE = 5;               // 1 AU = 5 units
+    const EARTH_ORBIT_R = 1.0 * SCALE;      // 地球轨道半径
+    const MARS_ORBIT_R = 1.52 * SCALE;      // 火星轨道半径
+    const LEO_RADIUS = 0.8;                  // 近地轨道半径 (场景单位)
+
+    // --- DOM 元素 ---
+    const aSlider = document.getElementById('aSlider');
+    const v2Slider = document.getElementById('v2Slider');
+    const aVal = document.getElementById('aVal');
+    const v2Val = document.getElementById('v2Val');
+    const apoapsisVal = document.getElementById('apoapsisVal');
+    const v1Val = document.getElementById('v1Val');
+    const orbitFeedback = document.getElementById('orbitFeedback');
+    const captureFeedback = document.getElementById('captureFeedback');
+    const boostBtn = document.getElementById('boostBtn');
+    const captureBtn = document.getElementById('captureBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const mainFeedback = document.getElementById('mainFeedback');
+
+    // --- 状态变量 ---
+    let a = 1.26;                   // 半长轴 (AU)
+    let v1 = 1.0;                   // 第一次加速速度 (由a计算得出)
+    let v2 = 1.0;
+    let apoapsisAU = 1.52;           // 远地点 = 2a - 1
+    let orbitCorrect = true;
+    let simulationActive = true;
+    let flightPhase = 'leo';         // 'leo' (近地轨道), 'transfer', 'mars_orbit'
+    let leoAngle = 0;
+    let transferAngle = 0;
+    let marsOrbitAngle = 0;
+    let capturePerformed = false;
+    let captureWindow = false;
+
+    // --- 3D场景初始化 ---
+    const container = document.getElementById('three-canvas');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x030b16);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(20, 15, 25);
+    camera.lookAt(0, 0, 0);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.autoRotate = false;
+    controls.enableZoom = true;
+    controls.target.set(0, 0, 0);
+    controls.maxPolarAngle = Math.PI / 2;
+
+    // 灯光
+    const ambientLight = new THREE.AmbientLight(0x404060);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 1);
+    dirLight.position.set(10, 20, 5);
+    scene.add(dirLight);
+    const pointLight = new THREE.PointLight(0xffaa33, 1, 30);
+    pointLight.position.set(0, 0, 0);
+    scene.add(pointLight);
+
+    // 星星背景
+    const starsGeometry = new THREE.BufferGeometry();
+    const starsCount = 2000;
+    const starsPositions = new Float32Array(starsCount * 3);
+    for (let i = 0; i < starsCount; i++) {
+        let r = 80 + Math.random() * 40;
+        let theta = Math.random() * Math.PI * 2;
+        let phi = Math.acos(2 * Math.random() - 1);
+        starsPositions[i*3] = r * Math.sin(phi) * Math.cos(theta);
+        starsPositions[i*3+1] = r * Math.sin(phi) * Math.sin(theta);
+        starsPositions[i*3+2] = r * Math.cos(phi);
+    }
+    starsGeometry.setAttribute('position', new THREE.BufferAttribute(starsPositions, 3));
+    const starsMaterial = new THREE.PointsMaterial({color: 0xffffff, size: 0.2});
+    const stars = new THREE.Points(starsGeometry, starsMaterial);
+    scene.add(stars);
+
+    // 太阳
+    const sunGeo = new THREE.SphereGeometry(1.2, 64, 64);
+    const sunMat = new THREE.MeshStandardMaterial({ color: 0xffaa33, emissive: 0xff5500 });
+    const sun = new THREE.Mesh(sunGeo, sunMat);
+    scene.add(sun);
+
+    // 轨道线
+    function createOrbit(radius, color, dashed = true) {
+        const points = [];
+        const segments = 128;
+        for (let i = 0; i <= segments; i++) {
+            const angle = (i / segments) * Math.PI * 2;
+            points.push(new THREE.Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle)));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        let material;
+        if (dashed) {
+            material = new THREE.LineDashedMaterial({ color: color, dashSize: 0.3, gapSize: 0.15 });
+        } else {
+            material = new THREE.LineBasicMaterial({ color: color });
+        }
+        const orbitLine = new THREE.Line(geometry, material);
+        if (dashed) orbitLine.computeLineDistances();
+        return orbitLine;
+    }
+
+    // 地球轨道 (绿色虚线)
+    const earthOrbitLine = createOrbit(EARTH_ORBIT_R, 0x2ecc71, true);
+    scene.add(earthOrbitLine);
+    // 火星轨道 (橙色虚线)
+    const marsOrbitLine = createOrbit(MARS_ORBIT_R, 0xe67e22, true);
+    scene.add(marsOrbitLine);
+
+    // 近地轨道 (白色实线) - 绕地球
+    const leoPoints = [];
+    const leoSegments = 64;
+    for (let i = 0; i <= leoSegments; i++) {
+        const angle = (i / leoSegments) * Math.PI * 2;
+        leoPoints.push(new THREE.Vector3(
+            EARTH_ORBIT_R + LEO_RADIUS * Math.cos(angle),
+            0,
+            LEO_RADIUS * Math.sin(angle)
+        ));
+    }
+    const leoGeo = new THREE.BufferGeometry().setFromPoints(leoPoints);
+    const leoLine = new THREE.Line(leoGeo, new THREE.LineBasicMaterial({ color: 0xffffff }));
+    scene.add(leoLine);
+
+    // 转移轨道线 (动态)
+    let transferLine = null;
+    function updateTransferOrbit(apoapsisAU) {
+        if (transferLine) scene.remove(transferLine);
+        const ra = apoapsisAU * SCALE;
+        const a_phys = (EARTH_ORBIT_R + ra) / 2;
+        const c = a_phys - EARTH_ORBIT_R;
+        const b = Math.sqrt(a_phys * a_phys - c * c);
+        
+        const points = [];
+        const segments = 128;
+        for (let i = 0; i <= segments; i++) {
+            const t = i / segments;
+            const angle = t * Math.PI * 2;
+            const x = -c + a_phys * Math.cos(angle);
+            const y = 0;
+            const z = b * Math.sin(angle);
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const material = new THREE.LineDashedMaterial({ color: 0xf1c40f, dashSize: 0.4, gapSize: 0.2 });
+        transferLine = new THREE.Line(geometry, material);
+        transferLine.computeLineDistances();
+        scene.add(transferLine);
+    }
+
+    // 行星
+    const earthGeo = new THREE.SphereGeometry(0.8, 32, 32);
+    const earthMat = new THREE.MeshStandardMaterial({ color: 0x2ecc71, emissive: 0x104010 });
+    const earth = new THREE.Mesh(earthGeo, earthMat);
+    earth.position.set(EARTH_ORBIT_R, 0, 0);
+    scene.add(earth);
+
+    const marsGeo = new THREE.SphereGeometry(0.7, 32, 32);
+    const marsMat = new THREE.MeshStandardMaterial({ color: 0xe67e22, emissive: 0x442200 });
+    const mars = new THREE.Mesh(marsGeo, marsMat);
+    mars.position.set(-MARS_ORBIT_R, 0, 0); // 放在左侧
+    scene.add(mars);
+
+    // 探测器
+    const probeGeo = new THREE.SphereGeometry(0.3, 16, 16);
+    const probeMat = new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x444444 });
+    const probe = new THREE.Mesh(probeGeo, probeMat);
+    probe.position.set(EARTH_ORBIT_R + LEO_RADIUS, 0, 0); // 初始在近地轨道上
+    scene.add(probe);
+
+    // 光晕
+    const earthGlow = new THREE.PointLight(0x2ecc71, 0.5, 8);
+    earthGlow.position.copy(earth.position);
+    scene.add(earthGlow);
+    const marsGlow = new THREE.PointLight(0xe67e22, 0.5, 8);
+    marsGlow.position.copy(mars.position);
+    scene.add(marsGlow);
+
+    // 火星周围的捕获窗口指示
+    const captureZoneGeo = new THREE.SphereGeometry(1.2, 32, 32);
+    const captureZoneMat = new THREE.MeshPhongMaterial({ color: 0xffaa33, transparent: true, opacity: 0.15, wireframe: true });
+    const captureZone = new THREE.Mesh(captureZoneGeo, captureZoneMat);
+    captureZone.position.set(-MARS_ORBIT_R, 0, 0);
+    scene.add(captureZone);
+
+    // --- 物理函数 ---
+    function updateFromA() {
+        a = parseFloat(aSlider.value);
+        aVal.innerText = a.toFixed(2);
+        // 远地点 = 2a - 1
+        apoapsisAU = 2 * a - 1;
+        apoapsisVal.innerText = apoapsisAU.toFixed(2) + ' AU';
+        
+        // 根据 a 计算第一次加速速度 v1 (在近地点 r=1, GM=1)
+        // 公式: v^2 = 2 - 1/a
+        v1 = Math.sqrt(2 - 1/a);
+        v1Val.innerText = v1.toFixed(3);
+
+        // 判断远地点是否接近火星轨道
+        if (Math.abs(apoapsisAU - 1.52) < 0.03) {
+            orbitFeedback.innerHTML = '✅ 远地点已对准火星轨道 (1.52 AU)';
+            orbitFeedback.style.color = '#a3d8a3';
+            orbitCorrect = true;
+        } else {
+            orbitFeedback.innerHTML = '⚡ 当前远地点 ' + apoapsisAU.toFixed(2) + ' AU，需要接近 1.52 AU';
+            orbitFeedback.style.color = '#ffd966';
+            orbitCorrect = false;
+        }
+        updateTransferOrbit(apoapsisAU);
+    }
+
+    function updateFromV2() {
+        v2 = parseFloat(v2Slider.value);
+        v2Val.innerText = v2.toFixed(3);
+        if (Math.abs(v2 - 1.0) < 0.02) {
+            captureFeedback.innerHTML = '✅ 第二次减速速度正确 (1.0倍火星速度) 可被捕获';
+            captureFeedback.style.color = '#a3d8a3';
+        } else {
+            captureFeedback.innerHTML = '⚠️ 第二次速度应为 1.00 倍火星速度 (当前' + v2.toFixed(2) + ')';
+            captureFeedback.style.color = '#ffb5a0';
+        }
+    }
+
+    // 第一次加速：从近地轨道切换到转移轨道，探测器瞬间移动到地球位置（切点）
+    function performBoost() {
+        if (flightPhase !== 'leo') {
+            mainFeedback.innerText = '❌ 探测器已经不在近地轨道上。';
+            return;
+        }
+        if (!orbitCorrect) {
+            mainFeedback.innerText = '❌ 当前远地点未对准火星轨道，请调整半长轴a。';
+            return;
+        }
+
+        // 切换到转移轨道
+        flightPhase = 'transfer';
+        transferAngle = 0; // 从近地点(地球位置)出发
+        capturePerformed = false;
+        captureWindow = false;
+        captureBtn.disabled = true;
+        captureBtn.innerText = '🔽 执行第二次减速';
+        mainFeedback.innerText = '探测器已进入霍曼转移轨道，飞向火星...';
+
+        // 将探测器位置设置到地球位置（即近地点）
+        probe.position.copy(earth.position);
+    }
+
+    // 第二次减速
+    function performCapture() {
+        if (flightPhase !== 'transfer' || !captureWindow || capturePerformed) {
+            mainFeedback.innerText = '⏳ 现在不是减速时机！';
+            return;
+        }
+
+        capturePerformed = true;
+        captureBtn.disabled = true;
+
+        if (Math.abs(v2 - 1.0) < 0.02) {
+            flightPhase = 'mars_orbit';
+            mainFeedback.innerText = '✅ 成功！探测器进入环火星轨道！';
+            captureBtn.innerText = '🔽 已成功';
+            marsOrbitAngle = 0;
+            // 将探测器置于火星附近开始环绕
+            const marsPos = mars.position.clone();
+            probe.position.set(marsPos.x + 1.2, 0, marsPos.z);
+        } else {
+            // 速度错误，继续沿转移轨道飞行
+            mainFeedback.innerText = '❌ 第二次速度错误，未能进入火星轨道，将继续飞行。';
+            captureBtn.innerText = '🔽 减速失败';
+        }
+    }
+
+    function resetSim() {
+        flightPhase = 'leo';
+        leoAngle = 0;
+        transferAngle = 0;
+        marsOrbitAngle = 0;
+        capturePerformed = false;
+        captureWindow = false;
+        captureBtn.disabled = true;
+        captureBtn.innerText = '🔽 执行第二次减速';
+        aSlider.value = '1.26';
+        v2Slider.value = '1.0';
+        v2 = 1.0;
+        updateFromA();
+        updateFromV2();
+        mainFeedback.innerText = '已重置：探测器正在近地轨道运行。';
+        probe.position.set(EARTH_ORBIT_R + LEO_RADIUS, 0, 0);
+    }
+
+    // 动画更新
+    function animate() {
+        requestAnimationFrame(animate);
+
+        if (flightPhase === 'leo') {
+            leoAngle += 0.02;
+            const x = EARTH_ORBIT_R + LEO_RADIUS * Math.cos(leoAngle);
+            const z = LEO_RADIUS * Math.sin(leoAngle);
+            probe.position.set(x, 0, z);
+        } 
+        else if (flightPhase === 'transfer') {
+            transferAngle += 0.006;
+
+            if (!capturePerformed && transferAngle >= Math.PI - 0.25 && transferAngle <= Math.PI + 0.25) {
+                captureWindow = true;
+                captureBtn.disabled = false;
+                captureBtn.innerText = '🔽 立即执行减速';
+            } else if (transferAngle > Math.PI + 0.3 && !capturePerformed) {
+                captureWindow = false;
+                captureBtn.disabled = true;
+                captureBtn.innerText = '🔽 错过窗口';
+            }
+
+            const ra = apoapsisAU * SCALE;
+            const a_phys = (EARTH_ORBIT_R + ra) / 2;
+            const c = a_phys - EARTH_ORBIT_R;
+            const b = Math.sqrt(a_phys * a_phys - c * c);
+            const ellipseCenterX = -c;
+
+            const x = ellipseCenterX + a_phys * Math.cos(transferAngle);
+            const z = b * Math.sin(transferAngle);
+            probe.position.set(x, 0, z);
+
+            if (transferAngle > 2 * Math.PI) {
+                transferAngle -= 2 * Math.PI;
+            }
+        } 
+        else if (flightPhase === 'mars_orbit') {
+            marsOrbitAngle += 0.03;
+            const marsPos = mars.position.clone();
+            const orbitRadius = 1.2;
+            probe.position.x = marsPos.x + orbitRadius * Math.cos(marsOrbitAngle);
+            probe.position.z = marsPos.z + orbitRadius * Math.sin(marsOrbitAngle);
+            probe.position.y = 0;
+        }
+
+        earthGlow.position.copy(earth.position);
+        marsGlow.position.copy(mars.position);
+
+        controls.update();
+        renderer.render(scene, camera);
+    }
+
+    // 事件绑定
+    aSlider.addEventListener('input', () => {
+        updateFromA();
+        if (flightPhase === 'leo') {
+            // 不影响探测器位置
+        }
+    });
+    v2Slider.addEventListener('input', updateFromV2);
+    boostBtn.addEventListener('click', performBoost);
+    captureBtn.addEventListener('click', performCapture);
+    resetBtn.addEventListener('click', resetSim);
+
+    // 初始化
+    updateFromA();
+    updateFromV2();
+    animate();
+
+    window.addEventListener('resize', onWindowResize, false);
+    function onWindowResize() {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    }
+</script>
+</body>
+</html>

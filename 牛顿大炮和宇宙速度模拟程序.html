@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🌍 牛顿大炮 · 地球引力场模拟器 (变轨 & 宇宙速度)</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        #info-panel {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 10, 20, 0.75);
+            color: #fff;
+            backdrop-filter: blur(8px);
+            border-radius: 16px;
+            padding: 20px 25px;
+            pointer-events: none;
+            border-left: 5px solid #3a86ff;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.2);
+            z-index: 10;
+        }
+        #info-panel h1 {
+            margin: 0 0 8px 0;
+            font-size: 1.7rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            color: #ffbe0b;
+        }
+        #info-panel p { margin: 5px 0; font-size: 1rem; }
+        #info-panel .highlight { color: #ff006e; font-weight: 600; }
+        #info-panel .value { color: #3a86ff; font-weight: 600; }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(30, 30, 40, 0.85);
+            backdrop-filter: blur(12px);
+            color: white;
+            border-radius: 50px;
+            padding: 15px 30px;
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+            border: 1px solid #444;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            z-index: 20;
+            pointer-events: all;
+            border-bottom: 3px solid #3a86ff;
+        }
+        #controls button {
+            background: #2a2a3a;
+            border: none;
+            color: white;
+            padding: 10px 22px;
+            border-radius: 40px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            letter-spacing: 0.5px;
+            border: 1px solid #555;
+            min-width: 90px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        #controls button:hover {
+            background: #3a3a5a;
+            border-color: #888;
+            transform: scale(1.02);
+        }
+        #controls button.accent {
+            background: #3a86ff;
+            border-color: #a2c4ff;
+            color: white;
+            font-weight: 600;
+        }
+        #controls button.accent:hover { background: #2667d9; }
+        #controls .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #1e1e2a;
+            padding: 0 20px;
+            border-radius: 40px;
+            border: 1px solid #4a4a60;
+        }
+        #controls .slider-container label {
+            color: #ccc;
+            font-size: 0.9rem;
+        }
+        #controls input[type=range] {
+            width: 160px;
+            height: 6px;
+            background: #3a3a50;
+            border-radius: 10px;
+            -webkit-appearance: none;
+        }
+        #controls input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #ffbe0b;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid white;
+        }
+        #controls .dv-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        #controls .dv-buttons button {
+            min-width: 60px;
+            padding: 8px 12px;
+            background: #4a4a6a;
+        }
+        #status {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            color: #0ff;
+            padding: 18px 25px;
+            border-radius: 20px;
+            font-family: monospace;
+            font-size: 1.2rem;
+            border: 1px solid #3a86ff;
+            z-index: 15;
+            pointer-events: none;
+            text-shadow: 0 0 8px rgba(0,150,255,0.5);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+        }
+        #status div { margin: 5px 0; }
+        .warning { color: #ff9f1c; }
+        .escape { color: #ef476f; }
+        .bound { color: #06d6a0; }
+        .small-note {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            color: #aaa;
+            font-size: 0.8rem;
+            background: rgba(0,0,0,0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            z-index: 15;
+        }
+    </style>
+</head>
+<body>
+    <div id="info-panel">
+        <h1>⚡ 牛顿大炮 · 地球引力场实验室</h1>
+        <p>🏔️ 发射高度: <span id="height-display" class="value">2.0</span>  (地球半径 R = 5.0)</p>
+        <p>🚀 第一宇宙速度 (圆轨): <span id="v1-display" class="value">3.78</span> | 第二宇宙速度 (逃逸): <span id="v2-display" class="value">5.35</span></p>
+        <p>📐 当前轨道类型: <span id="orbit-type" class="highlight">椭圆</span></p>
+        <p style="font-size:0.9rem; opacity:0.7;">⬅️ 拖动滑块调整初速 | 点击按钮施加变轨 (Δv=0.5)</p>
+    </div>
+
+    <div id="status">
+        <div>🛰️ 速度: <span id="speed-val">0.00</span>  (单位/帧)</div>
+        <div>📏 高度: <span id="alt-val">2.00</span> (地表以上)</div>
+        <div>⚡ 能量 (比能): <span id="energy-val">0.00</span></div>
+        <div>📈 角动量: <span id="angmom-val">0.00</span></div>
+    </div>
+
+    <div class="small-note">🌍 引力常数 GM = 100 | 方向: 切向/径向</div>
+
+    <div id="controls">
+        <div class="slider-container">
+            <label>初速大小</label>
+            <input type="range" id="speed-slider" min="0" max="8" step="0.05" value="4.0">
+            <span id="speed-value" style="min-width:40px;">4.00</span>
+        </div>
+        <button id="fire-btn" class="accent">🚀 发射 / 重置</button>
+        <button id="pause-btn">⏸️ 暂停</button>
+        <button id="v1-btn">🪐 设第一宇宙速度</button>
+        <button id="v2-btn">☄️ 设第二宇宙速度</button>
+        <div class="dv-buttons">
+            <button id="dv-tangent-plus">➕ 切向加速</button>
+            <button id="dv-tangent-minus">➖ 切向减速</button>
+            <button id="dv-radial-plus">⬆️ 径向向外</button>
+            <button id="dv-radial-minus">⬇️ 径向向内</button>
+        </div>
+    </div>
+
+    <!-- 引入Three.js核心库和轨道控制器 -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.128.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.128.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        // --- 初始化场景、相机、渲染器 ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0a0a20); // 深空色
+        
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(20, 8, 20);
+        camera.lookAt(0, 0, 0);
+        
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = false; // 不需要阴影
+        renderer.setPixelRatio(window.devicePixelRatio);
+        document.body.appendChild(renderer.domElement);
+
+        // --- 轨道控制器 (允许用户旋转/缩放) ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false;
+        controls.enableZoom = true;
+        controls.maxDistance = 80;
+        controls.minDistance = 8;
+        controls.target.set(0, 0, 0);
+
+        // --- 灯光 ---
+        const ambientLight = new THREE.AmbientLight(0x404060);
+        scene.add(ambientLight);
+        
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(10, 20, 5);
+        scene.add(dirLight);
+        
+        const backLight = new THREE.PointLight(0x4466aa, 0.8);
+        backLight.position.set(-10, 0, -10);
+        scene.add(backLight);
+        
+        // 添加一些星星 (简单粒子)
+        const starsGeo = new THREE.BufferGeometry();
+        const starsCount = 2000;
+        const starsPos = new Float32Array(starsCount * 3);
+        for (let i = 0; i < starsCount * 3; i += 3) {
+            starsPos[i] = (Math.random() - 0.5) * 200;
+            starsPos[i+1] = (Math.random() - 0.5) * 200;
+            starsPos[i+2] = (Math.random() - 0.5) * 200;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starsPos, 3));
+        const starsMat = new THREE.PointsMaterial({color: 0xffffff, size: 0.15});
+        const stars = new THREE.Points(starsGeo, starsMat);
+        scene.add(stars);
+
+        // --- 地球参数 ---
+        const EARTH_RADIUS = 5.0;
+        const GM = 100.0; // 引力常数
+        
+        // 创建地球 (带纹理)
+        const textureLoader = new THREE.TextureLoader();
+        const earthMap = textureLoader.load('https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg');
+        const earthMat = new THREE.MeshPhongMaterial({ map: earthMap, shininess: 5 });
+        const earthGeo = new THREE.SphereGeometry(EARTH_RADIUS, 64, 64);
+        const earth = new THREE.Mesh(earthGeo, earthMat);
+        scene.add(earth);
+        
+        // 添加一个淡淡的大气层光晕 (透明球)
+        const atmosGeo = new THREE.SphereGeometry(EARTH_RADIUS * 1.02, 64, 64);
+        const atmosMat = new THREE.MeshPhongMaterial({ color: 0x3a86ff, transparent: true, opacity: 0.1, side: THREE.BackSide });
+        const atmos = new THREE.Mesh(atmosGeo, atmosMat);
+        scene.add(atmos);
+        
+        // 添加经纬线辅助 (可选)
+        const gridHelper = new THREE.GridHelper(30, 20, 0x3366cc, 0x224488);
+        gridHelper.position.y = -EARTH_RADIUS - 0.1;
+        scene.add(gridHelper);
+        
+        // 轨道平面上的辅助圆环 (表示地表)
+        const ringGeo = new THREE.TorusGeometry(EARTH_RADIUS, 0.03, 16, 100);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0x4a6fa5, emissive: 0x112233 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        scene.add(ring);
+
+        // --- 卫星 (一个小球) ---
+        const satGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const satMat = new THREE.MeshStandardMaterial({ color: 0xff5500, emissive: 0x442200 });
+        const satellite = new THREE.Mesh(satGeo, satMat);
+        scene.add(satellite);
+
+        // 卫星尾焰效果 (小光点)
+        const glowGeo = new THREE.SphereGeometry(0.15, 8, 8);
+        const glowMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+        const glow = new THREE.Mesh(glowGeo, glowMat);
+        satellite.add(glow);
+        glow.position.set(-0.4, 0, 0); // 放在后面，但实际根据速度方向? 简化为静态
+
+        // --- 轨迹 (动态线条) ---
+        const maxTrailPoints = 800;
+        const trailPositions = new Float32Array(maxTrailPoints * 3);
+        const trailGeo = new THREE.BufferGeometry();
+        trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+        trailGeo.setDrawRange(0, 0); // 初始不绘制
+        const trailMat = new THREE.LineBasicMaterial({ color: 0x3a86ff, opacity: 0.8, transparent: true });
+        const trailLine = new THREE.Line(trailGeo, trailMat);
+        scene.add(trailLine);
+
+        // 存储轨迹点数组 (世界坐标)
+        const trailPoints = [];
+        let trailCount = 0;
+
+        // --- 卫星物理状态 ---
+        let pos = new THREE.Vector3(7.0, 0.0, 0.0);   // 初始位置 (R+2)
+        let vel = new THREE.Vector3(0.0, 0.0, 4.0);  // 初始速度 (切向)
+        let paused = false;
+        let simulationRunning = true;
+        
+        // 用于UI的引用
+        const speedSlider = document.getElementById('speed-slider');
+        const speedSpan = document.getElementById('speed-value');
+        const heightDisplay = document.getElementById('height-display');
+        const v1Display = document.getElementById('v1-display');
+        const v2Display = document.getElementById('v2-display');
+        const orbitTypeSpan = document.getElementById('orbit-type');
+        const speedValSpan = document.getElementById('speed-val');
+        const altValSpan = document.getElementById('alt-val');
+        const energyValSpan = document.getElementById('energy-val');
+        const angmomValSpan = document.getElementById('angmom-val');
+
+        // 按钮事件
+        const fireBtn = document.getElementById('fire-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const v1Btn = document.getElementById('v1-btn');
+        const v2Btn = document.getElementById('v2-btn');
+        const dvTanPlus = document.getElementById('dv-tangent-plus');
+        const dvTanMinus = document.getElementById('dv-tangent-minus');
+        const dvRadPlus = document.getElementById('dv-radial-plus');
+        const dvRadMinus = document.getElementById('dv-radial-minus');
+
+        // 初始化位置
+        function resetToLaunch() {
+            pos.set(7.0, 0.0, 0.0);
+            // 默认水平切向 (Z方向)
+            vel.set(0.0, 0.0, 4.0);
+            // 清空轨迹
+            trailPoints.length = 0;
+            trailCount = 0;
+            trailGeo.setDrawRange(0, 0);
+            // 更新滑块
+            speedSlider.value = vel.length();
+            speedSpan.innerText = vel.length().toFixed(2);
+        }
+
+        // 发射/重置按钮
+        fireBtn.addEventListener('click', () => {
+            resetToLaunch();
+            // 确保暂停状态解除
+            paused = false;
+            pauseBtn.innerText = '⏸️ 暂停';
+        });
+
+        // 暂停/继续
+        pauseBtn.addEventListener('click', () => {
+            paused = !paused;
+            pauseBtn.innerText = paused ? '▶️ 运行' : '⏸️ 暂停';
+        });
+
+        // 计算当前高度的宇宙速度
+        function getCosmicSpeeds(r) {
+            const v1 = Math.sqrt(GM / r);
+            const v2 = Math.sqrt(2 * GM / r);
+            return { v1, v2 };
+        }
+
+        // 设置速度大小为第一宇宙速度 (切向)
+        function setV1() {
+            const r = pos.length();
+            const { v1 } = getCosmicSpeeds(r);
+            // 切向方向 (在XZ平面垂直于径向)
+            const radDir = pos.clone().normalize();
+            // 选一个垂直向量: 绕Y轴旋转90度 (因为轨道在XZ平面)
+            const tanDir = new THREE.Vector3(-radDir.z, 0, radDir.x).normalize();
+            // 确保方向与当前速度大致同向(避免反向)，但也可以直接赋值
+            vel.copy(tanDir.multiplyScalar(v1));
+            // 更新滑块
+            speedSlider.value = v1;
+            speedSpan.innerText = v1.toFixed(2);
+        }
+        
+        // 设置第二宇宙速度
+        function setV2() {
+            const r = pos.length();
+            const { v2 } = getCosmicSpeeds(r);
+            const radDir = pos.clone().normalize();
+            const tanDir = new THREE.Vector3(-radDir.z, 0, radDir.x).normalize();
+            vel.copy(tanDir.multiplyScalar(v2));
+            speedSlider.value = v2;
+            speedSpan.innerText = v2.toFixed(2);
+        }
+
+        v1Btn.addEventListener('click', setV1);
+        v2Btn.addEventListener('click', setV2);
+
+        // 变轨: 施加Δv (大小固定0.5)
+        const DV = 0.5;
+        
+        function applyDeltaV(dvVec) {
+            vel.add(dvVec);
+            // 更新滑块
+            speedSlider.value = vel.length();
+            speedSpan.innerText = vel.length().toFixed(2);
+        }
+
+        dvTanPlus.addEventListener('click', () => {
+            if (vel.length() < 0.01) return;
+            const dir = vel.clone().normalize();
+            applyDeltaV(dir.multiplyScalar(DV));
+        });
+        dvTanMinus.addEventListener('click', () => {
+            if (vel.length() < 0.01) return;
+            const dir = vel.clone().normalize();
+            applyDeltaV(dir.multiplyScalar(-DV));
+        });
+        dvRadPlus.addEventListener('click', () => {
+            const radDir = pos.clone().normalize();
+            applyDeltaV(radDir.multiplyScalar(DV));
+        });
+        dvRadMinus.addEventListener('click', () => {
+            const radDir = pos.clone().normalize();
+            applyDeltaV(radDir.multiplyScalar(-DV));
+        });
+
+        // 滑块调整速度大小 (保持方向不变)
+        speedSlider.addEventListener('input', (e) => {
+            const newSpeed = parseFloat(e.target.value);
+            speedSpan.innerText = newSpeed.toFixed(2);
+            if (vel.length() > 0.001) {
+                vel.normalize().multiplyScalar(newSpeed);
+            } else {
+                // 如果速度为零，设定一个默认方向 (Z轴)
+                vel.set(0, 0, newSpeed);
+            }
+        });
+
+        // --- 工具函数: 更新UI显示 ---
+        function updateUI() {
+            const r = pos.length();
+            const alt = r - EARTH_RADIUS;
+            const speed = vel.length();
+            const energy = 0.5 * speed * speed - GM / r;
+            const angMom = pos.clone().cross(vel).length(); // 比角动量大小
+            
+            // 宇宙速度参考 (基于当前高度)
+            const { v1, v2 } = getCosmicSpeeds(r);
+            
+            heightDisplay.innerText = alt.toFixed(2);
+            v1Display.innerText = v1.toFixed(2);
+            v2Display.innerText = v2.toFixed(2);
+            
+            speedValSpan.innerText = speed.toFixed(2);
+            altValSpan.innerText = alt.toFixed(2);
+            energyValSpan.innerText = energy.toFixed(3);
+            angmomValSpan.innerText = angMom.toFixed(3);
+            
+            // 轨道类型判断
+            if (r <= EARTH_RADIUS + 0.1) {
+                orbitTypeSpan.innerText = '💥 撞地';
+                orbitTypeSpan.style.color = '#ef476f';
+            } else if (Math.abs(energy) < 1e-5) {
+                orbitTypeSpan.innerText = '📈 抛物线 (逃逸)';
+                orbitTypeSpan.style.color = '#ff9f1c';
+            } else if (energy < 0) {
+                orbitTypeSpan.innerText = '🪐 椭圆/圆轨道';
+                orbitTypeSpan.style.color = '#06d6a0';
+            } else {
+                orbitTypeSpan.innerText = '☄️ 双曲线 (逃逸)';
+                orbitTypeSpan.style.color = '#ef476f';
+            }
+        }
+
+        // --- 物理更新 (半隐式欧拉) ---
+        function physicsUpdate(dt) {
+            if (paused) return;
+            
+            const r = pos.length();
+            if (r <= EARTH_RADIUS + 0.05) {
+                // 撞地了，停止模拟并暂停
+                paused = true;
+                pauseBtn.innerText = '▶️ 运行';
+                return;
+            }
+            
+            // 加速度 a = -GM * r_vec / r^3
+            const acc = pos.clone().multiplyScalar(-GM / (r * r * r));
+            
+            // 半隐式欧拉: 先更新速度，再更新位置
+            vel.addScaledVector(acc, dt);
+            pos.addScaledVector(vel, dt);
+            
+            // 记录轨迹点 (每帧添加，但需要控制数量)
+            trailPoints.push(pos.clone());
+            if (trailPoints.length > maxTrailPoints) {
+                trailPoints.shift();
+            }
+            
+            // 更新卫星位置
+            satellite.position.copy(pos);
+            
+            // 让卫星稍微指向速度方向 (可选)
+            if (vel.length() > 0.001) {
+                const quat = new THREE.Quaternion().setFromUnitVectors(
+                    new THREE.Vector3(1, 0, 0),
+                    vel.clone().normalize()
+                );
+                satellite.quaternion.copy(quat);
+            }
+        }
+
+        // --- 更新轨迹线条几何体 ---
+        function updateTrailLine() {
+            const count = trailPoints.length;
+            if (count < 2) {
+                trailGeo.setDrawRange(0, 0);
+                return;
+            }
+            
+            // 重新填充buffer
+            const positions = new Float32Array(count * 3);
+            trailPoints.forEach((p, i) => {
+                positions[i*3] = p.x;
+                positions[i*3+1] = p.y;
+                positions[i*3+2] = p.z;
+            });
+            
+            trailGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            trailGeo.setDrawRange(0, count);
+            trailGeo.attributes.position.needsUpdate = true;
+        }
+
+        // --- 动画循环 ---
+        const fixedDT = 0.02; // 固定时间步长
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // 物理更新 (使用固定步长，让速度变化平滑)
+            physicsUpdate(fixedDT);
+            
+            // 更新轨迹线
+            updateTrailLine();
+            
+            // 更新UI
+            updateUI();
+            
+            // 控制器更新
+            controls.update();
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // --- 窗口大小自适应 ---
+        window.addEventListener('resize', onWindowResize, false);
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // 初始重置并更新滑块显示
+        resetToLaunch();
+        updateUI();
+
+        // 小提示: 在控制台可调整DV大小
+        console.log('🌍 引力场模拟器已启动 — 尝试变轨和宇宙速度!');
+    </script>
+</body>
+</html>

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>火星霍曼转移 · 科学计算器</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'JetBrains Mono', monospace;
+        }
+        body {
+            background: linear-gradient(145deg, #0b0f1c 0%, #1a1f30 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .calculator-container {
+            max-width: 850px;
+            width: 100%;
+            background: #1e2537;
+            border-radius: 40px;
+            padding: 30px;
+            box-shadow: 0 30px 50px rgba(0,0,0,0.7), inset 0 1px 3px rgba(255,255,255,0.1);
+            border: 1px solid #2f3a4f;
+        }
+        h1 {
+            color: #ffd966;
+            font-size: 1.8rem;
+            margin: 0 0 10px 0;
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        h1 small {
+            font-size: 0.9rem;
+            color: #8f9bb5;
+            font-weight: 300;
+        }
+        .display-area {
+            background: #0b0f1a;
+            border-radius: 24px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 2px solid #2f3a4f;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.6);
+        }
+        #expressionDisplay {
+            width: 100%;
+            min-height: 80px;
+            background: #03050c;
+            border: none;
+            border-radius: 16px;
+            color: #b3e5ff;
+            font-size: 2rem;
+            padding: 20px 25px;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+            letter-spacing: 2px;
+            word-break: break-all;
+            box-shadow: inset 0 2px 5px #000000;
+            margin-bottom: 15px;
+            border: 1px solid #4a5670;
+        }
+        #resultDisplay {
+            width: 100%;
+            min-height: 60px;
+            background: #0f1422;
+            border: none;
+            border-radius: 16px;
+            color: #ffd966;
+            font-size: 2.2rem;
+            padding: 15px 25px;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: right;
+            font-weight: 600;
+            border: 1px solid #5f6b89;
+        }
+        .constants-panel {
+            background: #232a3c;
+            border-radius: 28px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #3d475f;
+        }
+        .section-title {
+            color: #b3c7ff;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0 0 15px 10px;
+        }
+        .constants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+        .const-btn {
+            background: #1e2537;
+            border: 2px solid #3d475f;
+            color: #d4e0ff;
+            padding: 12px 5px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.15s;
+            font-family: 'JetBrains Mono', monospace;
+            text-align: center;
+            box-shadow: 0 4px 0 #0f1422;
+        }
+        .const-btn:hover {
+            background: #2f3a4f;
+            border-color: #ffaa5e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 0 #0f1422;
+        }
+        .const-btn:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 0 #0f1422;
+        }
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        .key-btn {
+            background: #2a3247;
+            border: none;
+            color: white;
+            padding: 18px 0;
+            border-radius: 24px;
+            font-size: 1.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.1s;
+            box-shadow: 0 6px 0 #151b28;
+            border-bottom: 2px solid #4a5670;
+        }
+        .key-btn.operator {
+            background: #ff8c5a;
+            color: #1a1f2c;
+            box-shadow: 0 6px 0 #b1451a;
+        }
+        .key-btn.function {
+            background: #3d4a6b;
+            font-size: 1.2rem;
+        }
+        .key-btn.equals {
+            background: #2ecc71;
+            color: #0f1422;
+            box-shadow: 0 6px 0 #1b7943;
+            grid-column: span 2;
+        }
+        .key-btn.clear {
+            background: #e74c3c;
+            color: white;
+            box-shadow: 0 6px 0 #a82315;
+        }
+        .key-btn:hover {
+            filter: brightness(1.1);
+            transform: translateY(-2px);
+        }
+        .key-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #151b28;
+        }
+        .custom-var-section {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+            background: #1e2537;
+            padding: 15px 20px;
+            border-radius: 40px;
+            border: 1px solid #4a5670;
+            align-items: center;
+        }
+        .custom-var-section input {
+            flex: 1;
+            background: #0f1422;
+            border: 2px solid #3d475f;
+            border-radius: 40px;
+            padding: 14px 20px;
+            font-size: 1rem;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .custom-var-section input::placeholder {
+            color: #5f6b89;
+        }
+        .custom-var-btn {
+            background: #9b59b6;
+            border: none;
+            color: white;
+            padding: 14px 30px;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 5px 0 #6c3483;
+            white-space: nowrap;
+        }
+        .custom-var-btn:hover {
+            background: #af7ac5;
+            transform: translateY(-2px);
+        }
+        .footnote {
+            color: #6b7a9a;
+            font-size: 0.8rem;
+            margin-top: 20px;
+            text-align: center;
+        }
+        .memory-badge {
+            color: #ffd966;
+            background: #0f1422;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+<div class="calculator-container">
+    <h1>
+        🧮 火星轨道设计计算器
+        <small>霍曼转移专用</small>
+        <span class="memory-badge" id="memoryIndicator"></span>
+    </h1>
+
+    <!-- 显示屏区域 -->
+    <div class="display-area">
+        <div id="expressionDisplay">0</div>
+        <div id="resultDisplay">0</div>
+    </div>
+
+    <!-- 科学常量面板 -->
+    <div class="constants-panel">
+        <div class="section-title">📌 常用常量 (点击即输入)</div>
+        <div class="constants-grid">
+            <div class="const-btn" data-value="Math.PI">π <span style="color:#ffaa5e;">3.14159</span></div>
+            <div class="const-btn" data-value="6.67e-11">G <span style="color:#ffaa5e;">6.67e-11</span></div>
+            <div class="const-btn" data-value="1.99e30">M_s <span style="color:#ffaa5e;">1.99e30</span></div>
+            <div class="const-btn" data-value="1.5e11">R_E <span style="color:#ffaa5e;">1.5e11</span></div>
+            <div class="const-btn" data-value="2.28e11">R_M <span style="color:#ffaa5e;">2.28e11</span></div>
+            <div class="const-btn" data-value="687">T_M <span style="color:#ffaa5e;">687天</span></div>
+            <div class="const-btn" data-value="1.327e20">GM_s <span style="color:#ffaa5e;">1.327e20</span></div>
+            <div class="const-btn" data-value="86400">1天(秒) <span style="color:#ffaa5e;">86400</span></div>
+        </div>
+    </div>
+
+    <!-- 主键盘区 -->
+    <div class="keypad">
+        <button class="key-btn function" data-action="sqrt">√</button>
+        <button class="key-btn function" data-action="^">x^y</button>
+        <button class="key-btn function" data-action="(">(</button>
+        <button class="key-btn function" data-action=")">)</button>
+        <button class="key-btn clear" data-action="C">C</button>
+
+        <button class="key-btn" data-action="7">7</button>
+        <button class="key-btn" data-action="8">8</button>
+        <button class="key-btn" data-action="9">9</button>
+        <button class="key-btn operator" data-action="/">÷</button>
+        <button class="key-btn operator" data-action="*">×</button>
+
+        <button class="key-btn" data-action="4">4</button>
+        <button class="key-btn" data-action="5">5</button>
+        <button class="key-btn" data-action="6">6</button>
+        <button class="key-btn operator" data-action="-">−</button>
+        <button class="key-btn operator" data-action="+">+</button>
+
+        <button class="key-btn" data-action="1">1</button>
+        <button class="key-btn" data-action="2">2</button>
+        <button class="key-btn" data-action="3">3</button>
+        <button class="key-btn function" data-action="pow2">x²</button>
+        <button class="key-btn function" data-action="pow3">x³</button>
+
+        <button class="key-btn" data-action="0">0</button>
+        <button class="key-btn" data-action=".">.</button>
+        <button class="key-btn function" data-action="exp">e</button>
+        <button class="key-btn function" data-action="abs">|x|</button>
+        <button class="key-btn equals" data-action="=">=</button>
+    </div>
+
+    <!-- 自定义变量区 (可定义半长轴 a 等) -->
+    <div class="custom-var-section">
+        <input type="text" id="customVarName" placeholder="变量名, 如 a" value="a">
+        <input type="text" id="customVarValue" placeholder="数值或表达式, 如 (1.5e11+2.28e11)/2">
+        <button class="custom-var-btn" id="defineVarBtn">📦 定义常量</button>
+        <button class="custom-var-btn" id="insertVarBtn" style="background:#3498db; box-shadow:0 5px 0 #1f5b8a;">↪️ 插入变量</button>
+    </div>
+
+    <!-- 快速公式模板 (针对学案任务) -->
+    <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
+        <div class="const-btn" style="flex:1;" data-template="sqrt( (R_E + R_M) / 2 )">半长轴 a 模板</div>
+        <div class="const-btn" style="flex:1;" data-template="sqrt( GM_s / R_E )">地球速度 v_E</div>
+        <div class="const-btn" style="flex:1;" data-template="sqrt( GM_s * (2/R_E - 1/a) )">v_p 公式</div>
+        <div class="const-btn" style="flex:1;" data-template="pi * sqrt( a^3 / GM_s ) / 86400">转移时间(天)</div>
+    </div>
+
+    <div class="footnote">
+        ⚡ 点击常量自动输入，可用 √ x^y 等函数。定义变量 a 后可在公式中直接使用。结果自动计算。
+    </div>
+</div>
+
+<script>
+    (function() {
+        // DOM 元素
+        const exprDisplay = document.getElementById('expressionDisplay');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const memoryIndicator = document.getElementById('memoryIndicator');
+        const customVarName = document.getElementById('customVarName');
+        const customVarValue = document.getElementById('customVarValue');
+
+        // 存储自定义变量 (键值对)
+        let customVars = {};
+
+        // 当前表达式字符串
+        let currentExpr = '0';
+
+        // 更新显示屏
+        function updateDisplay() {
+            exprDisplay.innerText = currentExpr || '0';
+            // 自动计算
+            computeResult();
+        }
+
+        // 安全计算表达式 (支持自定义变量)
+        function computeResult() {
+            if (!currentExpr || currentExpr === '') {
+                resultDisplay.innerText = '0';
+                return;
+            }
+            try {
+                // 构建一个函数，将自定义变量替换为值
+                let expr = currentExpr;
+                // 替换自定义变量 (注意：Math.PI 等保留)
+                for (let [key, val] of Object.entries(customVars)) {
+                    // 确保整个单词匹配，避免部分匹配 (如 a 和 aa)
+                    const regex = new RegExp('\\b' + key + '\\b', 'g');
+                    expr = expr.replace(regex, `(${val})`);
+                }
+                // 替换 π -> Math.PI
+                expr = expr.replace(/π/g, 'Math.PI');
+                expr = expr.replace(/pi/g, 'Math.PI');
+                // 替换 ^ 为 ** (求幂)
+                expr = expr.replace(/\^/g, '**');
+                // 处理 sqrt, abs 等函数
+                expr = expr.replace(/sqrt\(/g, 'Math.sqrt(');
+                expr = expr.replace(/abs\(/g, 'Math.abs(');
+                // 计算
+                const result = Function('"use strict"; return (' + expr + ')')();
+                if (isFinite(result)) {
+                    // 如果数字太大用科学计数法
+                    if (Math.abs(result) > 1e9 || Math.abs(result) < 1e-4 && result !== 0) {
+                        resultDisplay.innerText = result.toExponential(6);
+                    } else {
+                        resultDisplay.innerText = Number(result.toFixed(8)).toString();
+                    }
+                } else {
+                    resultDisplay.innerText = '错误';
+                }
+            } catch (e) {
+                resultDisplay.innerText = '表达式错误';
+                console.log(e);
+            }
+        }
+
+        // 处理按钮点击 (数字/运算符/函数)
+        function handleKeyAction(action) {
+            if (action === 'C') {
+                currentExpr = '0';
+                updateDisplay();
+                return;
+            }
+            if (action === '=') {
+                computeResult();  // 只计算，不修改表达式
+                return;
+            }
+            // 如果是运算符或数字/函数，追加到表达式
+            if (currentExpr === '0' && !isOperator(action) && action !== '(' && action !== ')') {
+                currentExpr = action;
+            } else {
+                // 特殊处理函数 (sqrt 等)
+                if (action === 'sqrt') currentExpr += 'sqrt(';
+                else if (action === '^') currentExpr += '^';
+                else if (action === 'pow2') currentExpr += '^2';
+                else if (action === 'pow3') currentExpr += '^3';
+                else if (action === 'exp') currentExpr += 'Math.E';
+                else if (action === 'abs') currentExpr += 'abs(';
+                else currentExpr += action;
+            }
+            updateDisplay();
+        }
+
+        function isOperator(ch) {
+            return ['+', '-', '*', '/', '^'].includes(ch);
+        }
+
+        // 常量按钮处理: 插入数值
+        document.querySelectorAll('.const-btn[data-value]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const val = btn.getAttribute('data-value');
+                // 如果是数学常量如 Math.PI，直接插入 "π" (显示友好)
+                if (val === 'Math.PI') {
+                    currentExpr = (currentExpr === '0') ? 'π' : currentExpr + 'π';
+                } else {
+                    // 数值常量
+                    if (currentExpr === '0') {
+                        currentExpr = val;
+                    } else {
+                        currentExpr += val;
+                    }
+                }
+                updateDisplay();
+            });
+        });
+
+        // 模板按钮 (快速公式)
+        document.querySelectorAll('[data-template]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const template = btn.getAttribute('data-template');
+                currentExpr = template;
+                updateDisplay();
+            });
+        });
+
+        // 键盘按钮
+        document.querySelectorAll('.key-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const action = btn.getAttribute('data-action') || btn.innerText;
+                handleKeyAction(action);
+            });
+        });
+
+        // 定义变量
+        document.getElementById('defineVarBtn').addEventListener('click', () => {
+            const varName = customVarName.value.trim();
+            let varValueExpr = customVarValue.value.trim();
+            if (!varName) {
+                alert('请输入变量名');
+                return;
+            }
+            if (!varValueExpr) {
+                alert('请输入变量值或表达式');
+                return;
+            }
+            // 尝试计算变量值表达式 (支持已有变量)
+            try {
+                // 替换已有变量
+                let expr = varValueExpr;
+                for (let [key, val] of Object.entries(customVars)) {
+                    const regex = new RegExp('\\b' + key + '\\b', 'g');
+                    expr = expr.replace(regex, `(${val})`);
+                }
+                expr = expr.replace(/π/g, 'Math.PI').replace(/\^/g, '**');
+                const computed = Function('"use strict"; return (' + expr + ')')();
+                if (!isFinite(computed)) throw new Error('无效数值');
+                // 保存为字符串形式的数值 (保留精度)
+                customVars[varName] = computed.toString();
+                memoryIndicator.innerText = `已定义: ${varName}`;
+                // 清空输入
+                customVarValue.value = '';
+                alert(`变量 ${varName} = ${computed} 已定义`);
+            } catch (e) {
+                alert('表达式无效: ' + e.message);
+            }
+        });
+
+        // 插入变量到表达式
+        document.getElementById('insertVarBtn').addEventListener('click', () => {
+            const varName = customVarName.value.trim();
+            if (!varName) {
+                alert('请输入要插入的变量名');
+                return;
+            }
+            if (!(varName in customVars)) {
+                alert(`变量 ${varName} 未定义，请先定义`);
+                return;
+            }
+            if (currentExpr === '0') {
+                currentExpr = varName;
+            } else {
+                currentExpr += varName;
+            }
+            updateDisplay();
+        });
+
+        // 初始
+        updateDisplay();
+    })();
+</script>
+</body>
+</html>
